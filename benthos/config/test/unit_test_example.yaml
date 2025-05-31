@@ -1,0 +1,10 @@
+input:
+  generate:
+    mapping: 'root.id = uuid_v4()'
+
+pipeline:
+  processors:
+    - mapping: 'root = "%vend".format(content().uppercase().string())'
+
+output:
+  drop: {}
