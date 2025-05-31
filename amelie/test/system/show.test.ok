@@ -1,0 +1,224 @@
+open E0 "uuid": "00000000-0000-0000-0000-000000000000", "listen": [{ "host": "127.0.0.1", "port": 3485 }]
+connect E0 S0 127.0.0.1:3485
+# test: show statement parsing
+show
+{"msg": "show ⟵ name expected"}
+show;
+{"msg": "show❰;❱ ⟵ name expected"}
+show all junk
+{"msg": "show all ❰junk❱ ⟵ ; expected"}
+show 1234
+{"msg": "show ❰1234❱ ⟵ name expected"}
+# test: show users
+create user test
+show users abc
+{"msg": "show users ❰abc❱ ⟵ ; expected"}
+show users format
+{"msg": "show users format ⟵ string expected"}
+show users format 'json'
+[{"name": "test"}]
+# test: show user
+show user
+{"msg": "show user ⟵ name expected"}
+show user unknown
+[null]
+show user test
+[{
+  "name": "test"
+}]
+show user test format
+{"msg": "show user test format ⟵ string expected"}
+show user test format 'json'
+[{"name": "test"}]
+# test: show schemas
+create schema test
+show schemas
+[{
+  "name": "system",
+  "system": true
+}, {
+  "name": "public",
+  "system": true
+}, {
+  "name": "test",
+  "system": false
+}]
+show schema test
+[{
+  "name": "test",
+  "system": false
+}]
+show schema test format 'json'
+[{"name": "test", "system": false}]
+# test: show tables
+create table test (id int primary key)
+show tables
+[{
+  "schema": "public",
+  "name": "test",
+  "unlogged": false
+}]
+# test: show table
+show table
+{"msg": "show table ⟵ table name expected"}
+show table test
+[{
+  "schema": "public",
+  "name": "test",
+  "unlogged": false
+}]
+show table test format 'json'
+[{"schema": "public", "name": "test", "unlogged": false}]
+# test: show procedures
+create procedure test() begin select 1 end
+show procedures
+[{
+  "schema": "public",
+  "name": "test",
+  "text": "select 1",
+  "columns": [],
+  "vars": []
+}]
+# test: show procedure
+show procedure
+{"msg": "show procedure ⟵ procedure name expected"}
+show procedure test
+[{
+  "schema": "public",
+  "name": "test",
+  "text": "select 1",
+  "columns": [],
+  "vars": []
+}]
+show procedure test format 'json'
+[{"schema": "public", "name": "test", "text": "select 1", "columns": [], "vars": []}]
+# test: show wal
+show wal
+[{
+  "lsn": 4,
+  "lsn_min": 1,
+  "files": 1,
+  "slots": 0,
+  "slots_min": -1,
+  "writes": 3,
+  "writes_bytes": 472,
+  "ops": 3,
+  "checkpoint": 1
+}]
+# test: show replicas
+show replicas
+[]
+# test: show replica
+show replica abc
+{"msg": "failed to parse uuid"}
+show replica 'abc'
+{"msg": "failed to parse uuid"}
+show replica '00000000-0000-0000-0000-000000000000'
+[null]
+# test: show state
+select system.state()
+[{
+  "version": "0.4.0",
+  "directory": "_output/E0",
+  "uuid": "00000000-0000-0000-0000-000000000000",
+  "frontends": 1,
+  "backends": 1,
+  "checkpoint": 1,
+  "lsn": 4,
+  "psn": 1,
+  "read_only": false
+}]
+select system.state().directory
+["_output/E0"]
+select system.state()["directory"]
+["_output/E0"]
+select system.state(123)
+{"msg": "state(❰int❱ ⟵ function has no arguments"}
+# test: show config
+show config
+[{
+  "uuid": "00000000-0000-0000-0000-000000000000",
+  "timezone": "UTC",
+  "format": "json-pretty",
+  "log_enable": true,
+  "log_to_file": true,
+  "log_to_stdout": false,
+  "log_connections": true,
+  "log_options": true,
+  "tls_capath": "",
+  "tls_ca": "",
+  "tls_cert": "",
+  "tls_key": "",
+  "listen": [{
+    "host": "127.0.0.1",
+    "port": 3485
+  }],
+  "limit_send": 3145728,
+  "limit_recv": 1048576,
+  "limit_write": 0,
+  "frontends": 1,
+  "backends": 1,
+  "wal_worker": false,
+  "wal_crc": true,
+  "wal_sync_on_create": false,
+  "wal_sync_on_close": false,
+  "wal_sync_on_write": false,
+  "wal_sync_interval": "1 sec",
+  "wal_size": 67108864,
+  "wal_truncate": 0,
+  "repl_readahead": 262144,
+  "repl_reconnect_ms": 3000,
+  "checkpoint_interval": "5 min",
+  "checkpoint_workers": 3
+}]
+# test: show all
+show all
+[{
+  "uuid": "00000000-0000-0000-0000-000000000000",
+  "timezone": "UTC",
+  "format": "json-pretty",
+  "log_enable": true,
+  "log_to_file": true,
+  "log_to_stdout": false,
+  "log_connections": true,
+  "log_options": true,
+  "tls_capath": "",
+  "tls_ca": "",
+  "tls_cert": "",
+  "tls_key": "",
+  "listen": [{
+    "host": "127.0.0.1",
+    "port": 3485
+  }],
+  "limit_send": 3145728,
+  "limit_recv": 1048576,
+  "limit_write": 0,
+  "frontends": 1,
+  "backends": 1,
+  "wal_worker": false,
+  "wal_crc": true,
+  "wal_sync_on_create": false,
+  "wal_sync_on_close": false,
+  "wal_sync_on_write": false,
+  "wal_sync_interval": "1 sec",
+  "wal_size": 67108864,
+  "wal_truncate": 0,
+  "repl_readahead": 262144,
+  "repl_reconnect_ms": 3000,
+  "checkpoint_interval": "5 min",
+  "checkpoint_workers": 3
+}]
+select system.config().uuid
+["00000000-0000-0000-0000-000000000000"]
+select system.config(123)
+{"msg": "config(❰int❱ ⟵ function has no arguments"}
+# test: show name
+show log_enable
+[true]
+show "log_enable"
+{"msg": "show ❰\"log_enable\"❱ ⟵ name expected"}
+# test: show unknown
+show asdf
+{"msg": "show ❰asdf❱ ⟵ option not found"}
+disconnect S0
+close E0

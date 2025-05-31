@@ -1,0 +1,203 @@
+open E0 "uuid": "00000000-0000-0000-0000-000000000000", "listen": [{ "host": "127.0.0.1", "port": 3485 }]
+connect E0 S0 127.0.0.1:3485
+# test: case expr
+select case
+{"msg": "select case ⟵ bad expression"}
+select case 1
+{"msg": "select case 1 ⟵ WHEN, ELSE or END expected"}
+select case 1 then
+{"msg": "select case 1 ❰then❱ ⟵ WHEN, ELSE or END expected"}
+select case 1 then 1
+{"msg": "select case 1 ❰then❱ ⟵ WHEN, ELSE or END expected"}
+select case 1 when 1 then 1
+{"msg": "select case 1 when 1 then 1 ⟵ WHEN, ELSE or END expected"}
+select case 1 when 1 then 1 end
+[1]
+select (case 1 when 1 then 1 end)::type
+["int"]
+explain select case 1 when 1 then 1 end
+[{
+  "bytecode": {
+    "frontend": {
+      "00": "set                 0      1      0     ",
+      "01": "jmp                 3      0      0     ",
+      "02": "jmp                 12     0      0     ",
+      "03": "int                 2      -      0     # 1",
+      "04": "int                 3      -      0     # 1",
+      "05": "equii               4      2      3     ",
+      "06": "jntr                10     4      0     ",
+      "07": "int                 2      -      0     # 1",
+      "08": "mov                 1      2      0     ",
+      "09": "jmp                 2      0      0     ",
+      "10": "null                2      0      0     ",
+      "11": "mov                 1      2      0     ",
+      "12": "nop                 0      0      0     ",
+      "13": "push                1      0      0     ",
+      "14": "set_add             0      0      0     ",
+      "15": "content             0      -      -     ",
+      "16": "ret                 0      0      0     "
+    }
+  },
+  "access": []
+}]
+select case 0 when 1 then 1 when 2 then 2 end
+[null]
+select (case 0 when 1 then 1 when 2 then 2 end)::type
+["null"]
+explain select case 0 when 1 then 1 when 2 then 2 end
+[{
+  "bytecode": {
+    "frontend": {
+      "00": "set                 0      1      0     ",
+      "01": "jmp                 3      0      0     ",
+      "02": "jmp                 19     0      0     ",
+      "03": "int                 2      -      0     # 0",
+      "04": "int                 3      -      0     # 1",
+      "05": "equii               4      2      3     ",
+      "06": "jntr                10     4      0     ",
+      "07": "int                 2      -      0     # 1",
+      "08": "mov                 1      2      0     ",
+      "09": "jmp                 2      0      0     ",
+      "10": "int                 2      -      0     # 0",
+      "11": "int                 3      -      0     # 2",
+      "12": "equii               4      2      3     ",
+      "13": "jntr                17     4      0     ",
+      "14": "int                 2      -      0     # 2",
+      "15": "mov                 1      2      0     ",
+      "16": "jmp                 2      0      0     ",
+      "17": "null                2      0      0     ",
+      "18": "mov                 1      2      0     ",
+      "19": "nop                 0      0      0     ",
+      "20": "push                1      0      0     ",
+      "21": "set_add             0      0      0     ",
+      "22": "content             0      -      -     ",
+      "23": "ret                 0      0      0     "
+    }
+  },
+  "access": []
+}]
+select case 0 when 1 then 1 when 2 then 2 else 'else' end
+{"msg": "select case 0 when 1 then 1 when 2 then 2 else ❰'else'❱ ⟵ CASE expression type mismatch"}
+select (case 0 when 1 then 1 when 2 then 2 else 'else' end)::type
+{"msg": "select (case 0 when 1 then 1 when 2 then 2 else ❰'else'❱ ⟵ CASE expression type mismatch"}
+explain select case 0 when 1 then 1 when 2 then 2 else 'else' end
+{"msg": "explain select case 0 when 1 then 1 when 2 then 2 else ❰'else'❱ ⟵ CASE expression type mismatch"}
+select case [1,2,3] when [1,0] then 1 when [1,2,3] then 2 end
+[2]
+select case [1,2,3] when [1,0] then 1 when [1,2,3,4] then 2 end
+[null]
+select case [1,2,3] when [1,0] then 1 when [1,2,3,4] then 2 else 3 end
+[3]
+select case [1,2,3] when [1,0] then 1 when [1,2,3,4] then 2 else 3 else 4 end
+{"msg": "select case [1,2,3] when [1,0] then 1 when [1,2,3,4] then 2 else 3 ❰else❱ ⟵ ELSE is redefined"}
+select case [1,2,3] when [1,0] then 1 when [1,2,3,4] then 2 else 3 else 4 when null then null end
+{"msg": "select case [1,2,3] when [1,0] then 1 when [1,2,3,4] then 2 else 3 ❰else❱ ⟵ ELSE is redefined"}
+select case null when [1,0] then 1 when [1,2,3,4] then 2 else 3 else 4 when null then null end
+{"msg": "select case null when [1,0] then 1 when [1,2,3,4] then 2 else 3 ❰else❱ ⟵ ELSE is redefined"}
+select case null when [1,0] then 1 when [1,2,3,4] then 2 else 3 when null then null end
+[3]
+explain select case null when [1,0] then 1 when [1,2,3,4] then 2 else 3 when null then null end
+[{
+  "bytecode": {
+    "frontend": {
+      "00": "set                 0      1      0     ",
+      "01": "jmp                 3      0      0     ",
+      "02": "jmp                 26     0      0     ",
+      "03": "null                2      0      0     ",
+      "04": "json                3      0      0     ",
+      "05": "nullop              4      2      3     ",
+      "06": "jntr                10     4      0     ",
+      "07": "int                 2      -      0     # 1",
+      "08": "mov                 1      2      0     ",
+      "09": "jmp                 2      0      0     ",
+      "10": "null                2      0      0     ",
+      "11": "json                3      4      0     ",
+      "12": "nullop              4      2      3     ",
+      "13": "jntr                17     4      0     ",
+      "14": "int                 2      -      0     # 2",
+      "15": "mov                 1      2      0     ",
+      "16": "jmp                 2      0      0     ",
+      "17": "null                2      0      0     ",
+      "18": "null                3      0      0     ",
+      "19": "nullop              4      2      3     ",
+      "20": "jntr                24     4      0     ",
+      "21": "null                2      0      0     ",
+      "22": "mov                 1      2      0     ",
+      "23": "jmp                 2      0      0     ",
+      "24": "int                 2      -      0     # 3",
+      "25": "mov                 1      2      0     ",
+      "26": "nop                 0      0      0     ",
+      "27": "push                1      0      0     ",
+      "28": "set_add             0      0      0     ",
+      "29": "content             0      -      -     ",
+      "30": "ret                 0      0      0     "
+    }
+  },
+  "access": []
+}]
+select case end
+{"msg": "select case ❰end❱ ⟵ WHEN or ELSE expected"}
+select case else end
+{"msg": "select case else ❰end❱ ⟵ bad expression"}
+select case else 1 end
+[1]
+select case null when 1 then 1 when null then 2 else 3 end
+[3]
+# test: case
+select case
+{"msg": "select case ⟵ bad expression"}
+select case when 1
+{"msg": "select case when 1 ⟵ THEN expected"}
+select case when 1 then 1
+{"msg": "select case when 1 then 1 ⟵ WHEN, ELSE or END expected"}
+select case when 1 then 1 end
+[1]
+explain select case when 1 then 1 end
+[{
+  "bytecode": {
+    "frontend": {
+      "00": "set                 0      1      0     ",
+      "01": "jmp                 3      0      0     ",
+      "02": "jmp                 10     0      0     ",
+      "03": "int                 2      -      0     # 1",
+      "04": "jntr                8      2      0     ",
+      "05": "int                 3      -      0     # 1",
+      "06": "mov                 1      3      0     ",
+      "07": "jmp                 2      0      0     ",
+      "08": "null                2      0      0     ",
+      "09": "mov                 1      2      0     ",
+      "10": "nop                 0      0      0     ",
+      "11": "push                1      0      0     ",
+      "12": "set_add             0      0      0     ",
+      "13": "content             0      -      -     ",
+      "14": "ret                 0      0      0     "
+    }
+  },
+  "access": []
+}]
+select case else
+{"msg": "select case else ⟵ bad expression"}
+select case else end
+{"msg": "select case else ❰end❱ ⟵ bad expression"}
+select case else 1 end
+[1]
+select case when 1=1 then 1 end
+[1]
+select case when 1=0 then 1 when 1=3 when 1=1 then 'yes' end
+{"msg": "select case when 1=0 then 1 when 1=3 ❰when❱ ⟵ THEN expected"}
+select case when 1=0 then 1 when 1=3 when 1=1 then 2 end
+{"msg": "select case when 1=0 then 1 when 1=3 ❰when❱ ⟵ THEN expected"}
+select case when 1=0 then 1 when 1=3 then 2 when 1=1 then 3 end
+[3]
+select case when 1=0 then 1 when 1=3 then 2 else null end
+[null]
+select case when 1=0 then 1 when 1=3 then 2 else 3 end
+[3]
+select case when 1=0 then 1 when 1=3 then 2 end
+[null]
+select case when [1,2,3] = [1,2,3] then true end
+[true]
+select case when 1=0 then 1 when null then 2 else 3 end
+[3]
+disconnect S0
+close E0

@@ -1,0 +1,116 @@
+open E0 "uuid": "00000000-0000-0000-0000-000000000000", "listen": [{ "host": "127.0.0.1", "port": 3485 }], "backends": 3
+connect E0 S0 127.0.0.1:3485
+# test: select * from (select expr)
+explain select * from (select 1) t
+[{
+  "bytecode": {
+    "frontend": {
+      "00": "set                 0      1      0     ",
+      "01": "int                 1      -      0     # 1",
+      "02": "push                1      0      0     ",
+      "03": "set_add             0      0      0     ",
+      "04": "set                 1      1      0     ",
+      "05": "ref                 2      0      0     ",
+      "06": "store_open          0      2      11    ",
+      "07": "store_read          3      0      0     ",
+      "08": "push                3      0      0     ",
+      "09": "set_add             1      0      0     ",
+      "10": "store_next          0      7      0     ",
+      "11": "store_close         0      1      0     ",
+      "12": "content             1      -      -     ",
+      "13": "ret                 0      0      0     "
+    }
+  },
+  "access": []
+}]
+select * from (select 1) t
+[1]
+explain select * from (select 1, 2) t
+[{
+  "bytecode": {
+    "frontend": {
+      "00": "set                 0      2      0     ",
+      "01": "int                 1      -      0     # 1",
+      "02": "push                1      0      0     ",
+      "03": "int                 1      -      0     # 2",
+      "04": "push                1      0      0     ",
+      "05": "set_add             0      0      0     ",
+      "06": "set                 1      2      0     ",
+      "07": "ref                 2      0      0     ",
+      "08": "store_open          0      2      15    ",
+      "09": "store_read          3      0      0     ",
+      "10": "push                3      0      0     ",
+      "11": "store_read          3      0      1     ",
+      "12": "push                3      0      0     ",
+      "13": "set_add             1      0      0     ",
+      "14": "store_next          0      9      0     ",
+      "15": "store_close         0      1      0     ",
+      "16": "content             1      -      -     ",
+      "17": "ret                 0      0      0     "
+    }
+  },
+  "access": []
+}]
+select * from (select 1, 2) t
+[[1, 2]]
+# test: select column from (select expr as)
+explain select x from (select 1 as x) t
+[{
+  "bytecode": {
+    "frontend": {
+      "00": "set                 0      1      0     ",
+      "01": "int                 1      -      0     # 1",
+      "02": "push                1      0      0     ",
+      "03": "set_add             0      0      0     ",
+      "04": "set                 1      1      0     ",
+      "05": "ref                 2      0      0     ",
+      "06": "store_open          0      2      11    ",
+      "07": "store_read          3      0      0     ",
+      "08": "push                3      0      0     ",
+      "09": "set_add             1      0      0     ",
+      "10": "store_next          0      7      0     ",
+      "11": "store_close         0      1      0     ",
+      "12": "content             1      -      -     ",
+      "13": "ret                 0      0      0     "
+    }
+  },
+  "access": []
+}]
+select x from (select 1 as x) t
+[1]
+explain select a, b from (select 1 as a, 2 as b) t
+[{
+  "bytecode": {
+    "frontend": {
+      "00": "set                 0      2      0     ",
+      "01": "int                 1      -      0     # 1",
+      "02": "push                1      0      0     ",
+      "03": "int                 1      -      0     # 2",
+      "04": "push                1      0      0     ",
+      "05": "set_add             0      0      0     ",
+      "06": "set                 1      2      0     ",
+      "07": "ref                 2      0      0     ",
+      "08": "store_open          0      2      15    ",
+      "09": "store_read          3      0      0     ",
+      "10": "push                3      0      0     ",
+      "11": "store_read          3      0      1     ",
+      "12": "push                3      0      0     ",
+      "13": "set_add             1      0      0     ",
+      "14": "store_next          0      9      0     ",
+      "15": "store_close         0      1      0     ",
+      "16": "content             1      -      -     ",
+      "17": "ret                 0      0      0     "
+    }
+  },
+  "access": []
+}]
+select a, b from (select 1 as a, 2 as b) t
+[[1, 2]]
+# test: select * from (select expr as) (conflict)
+explain select * from (select 1 as a, 2 as a) t
+{"msg": "explain select ❰*❱ ⟵ column t.a is ambiguous"}
+# test: select column from (select expr as) (conflict)
+explain select a from (select 1 as a, 2 as a) t
+{"msg": "explain select ❰a❱ ⟵ column t.a is ambiguous"}
+disconnect S0
+close E0

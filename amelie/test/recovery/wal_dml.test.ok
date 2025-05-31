@@ -1,0 +1,230 @@
+open E0 "uuid": "00000000-0000-0000-0000-000000000000", "listen": [{ "host": "127.0.0.1", "port": 3485 }], "backends": 3
+connect E0 S0 127.0.0.1:3485
+# test: create wal on start
+show wal
+[{
+  "lsn": 1,
+  "lsn_min": 1,
+  "files": 1,
+  "slots": 0,
+  "slots_min": -1,
+  "writes": 0,
+  "writes_bytes": 0,
+  "ops": 0,
+  "checkpoint": 1
+}]
+select system.wal()
+[{
+  "lsn": 1,
+  "lsn_min": 1,
+  "files": 1,
+  "slots": 0,
+  "slots_min": -1,
+  "writes": 0,
+  "writes_bytes": 0,
+  "ops": 0,
+  "checkpoint": 1
+}]
+select system.state().lsn
+[1]
+show all
+[{
+  "uuid": "00000000-0000-0000-0000-000000000000",
+  "timezone": "UTC",
+  "format": "json-pretty",
+  "log_enable": true,
+  "log_to_file": true,
+  "log_to_stdout": false,
+  "log_connections": true,
+  "log_options": true,
+  "tls_capath": "",
+  "tls_ca": "",
+  "tls_cert": "",
+  "tls_key": "",
+  "listen": [{
+    "host": "127.0.0.1",
+    "port": 3485
+  }],
+  "limit_send": 3145728,
+  "limit_recv": 1048576,
+  "limit_write": 0,
+  "frontends": 1,
+  "backends": 3,
+  "wal_worker": false,
+  "wal_crc": true,
+  "wal_sync_on_create": false,
+  "wal_sync_on_close": false,
+  "wal_sync_on_write": false,
+  "wal_sync_interval": "1 sec",
+  "wal_size": 67108864,
+  "wal_truncate": 0,
+  "repl_readahead": 262144,
+  "repl_reconnect_ms": 3000,
+  "checkpoint_interval": "5 min",
+  "checkpoint_workers": 3
+}]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+show wal
+[{
+  "lsn": 1,
+  "lsn_min": 1,
+  "files": 1,
+  "slots": 0,
+  "slots_min": -1,
+  "writes": 0,
+  "writes_bytes": 0,
+  "ops": 0,
+  "checkpoint": 1
+}]
+select system.wal()
+[{
+  "lsn": 1,
+  "lsn_min": 1,
+  "files": 1,
+  "slots": 0,
+  "slots_min": -1,
+  "writes": 0,
+  "writes_bytes": 0,
+  "ops": 0,
+  "checkpoint": 1
+}]
+select system.state().lsn
+[1]
+show all
+[{
+  "uuid": "00000000-0000-0000-0000-000000000000",
+  "timezone": "UTC",
+  "format": "json-pretty",
+  "log_enable": true,
+  "log_to_file": true,
+  "log_to_stdout": false,
+  "log_connections": true,
+  "log_options": true,
+  "tls_capath": "",
+  "tls_ca": "",
+  "tls_cert": "",
+  "tls_key": "",
+  "listen": [{
+    "host": "127.0.0.1",
+    "port": 3485
+  }],
+  "limit_send": 3145728,
+  "limit_recv": 1048576,
+  "limit_write": 0,
+  "frontends": 1,
+  "backends": 1,
+  "wal_worker": false,
+  "wal_crc": true,
+  "wal_sync_on_create": false,
+  "wal_sync_on_close": false,
+  "wal_sync_on_write": false,
+  "wal_sync_interval": "1 sec",
+  "wal_size": 67108864,
+  "wal_truncate": 0,
+  "repl_readahead": 262144,
+  "repl_reconnect_ms": 3000,
+  "checkpoint_interval": "5 min",
+  "checkpoint_workers": 3
+}]
+# test: create table
+create table test (id serial primary key, data int default 0)
+select system.state().lsn
+[2]
+select identity_of("public", "test")
+[0]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[2]
+select identity_of("public", "test")
+[0]
+# test: insert
+insert into test () values (), (), ()
+select system.state().lsn
+[3]
+select identity_of("public", "test")
+[3]
+select * from test
+[[0, 0], [1, 0], [2, 0]]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[3]
+select identity_of("public", "test")
+[3]
+select * from test
+[[0, 0], [1, 0], [2, 0]]
+# test: update
+update test set data = id
+select system.state().lsn
+[4]
+select identity_of("public", "test")
+[3]
+select * from test
+[[0, 0], [1, 1], [2, 2]]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[4]
+select identity_of("public", "test")
+[3]
+select * from test
+[[0, 0], [1, 1], [2, 2]]
+# test: upsert
+insert into test values (2, 0) on conflict do update set data = data + 1
+select system.state().lsn
+[5]
+select identity_of("public", "test")
+[4]
+select * from test
+[[0, 0], [1, 1], [2, 3]]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[5]
+select identity_of("public", "test")
+[3]
+select * from test
+[[0, 0], [1, 1], [2, 3]]
+# test: delete
+delete from test where id in (0, 1)
+select system.state().lsn
+[6]
+select identity_of("public", "test")
+[3]
+select * from test
+[[2, 3]]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[6]
+select identity_of("public", "test")
+[3]
+select * from test
+[[2, 3]]
+disconnect S0
+close E0

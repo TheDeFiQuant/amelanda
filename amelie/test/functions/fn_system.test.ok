@@ -1,0 +1,136 @@
+open E0 "uuid": "00000000-0000-0000-0000-000000000000", "listen": [{ "host": "127.0.0.1", "port": 3485 }]
+connect E0 S0 127.0.0.1:3485
+# test: config()
+select system.config()
+[{
+  "uuid": "00000000-0000-0000-0000-000000000000",
+  "timezone": "UTC",
+  "format": "json-pretty",
+  "log_enable": true,
+  "log_to_file": true,
+  "log_to_stdout": false,
+  "log_connections": true,
+  "log_options": true,
+  "tls_capath": "",
+  "tls_ca": "",
+  "tls_cert": "",
+  "tls_key": "",
+  "listen": [{
+    "host": "127.0.0.1",
+    "port": 3485
+  }],
+  "limit_send": 3145728,
+  "limit_recv": 1048576,
+  "limit_write": 0,
+  "frontends": 1,
+  "backends": 1,
+  "wal_worker": false,
+  "wal_crc": true,
+  "wal_sync_on_create": false,
+  "wal_sync_on_close": false,
+  "wal_sync_on_write": false,
+  "wal_sync_interval": "1 sec",
+  "wal_size": 67108864,
+  "wal_truncate": 0,
+  "repl_readahead": 262144,
+  "repl_reconnect_ms": 3000,
+  "checkpoint_interval": "5 min",
+  "checkpoint_workers": 3
+}]
+# test: state()
+select system.state()
+[{
+  "version": "0.4.0",
+  "directory": "_output/E0",
+  "uuid": "00000000-0000-0000-0000-000000000000",
+  "frontends": 1,
+  "backends": 1,
+  "checkpoint": 1,
+  "lsn": 1,
+  "psn": 0,
+  "read_only": false
+}]
+# test: users()
+select system.users()
+[[]]
+# test: user()
+select system.user('test')
+[null]
+# test: replicas()
+select system.replicas()
+[[]]
+# test: replica()
+select system.replica('00000000-0000-0000-0000-000000000000')
+[null]
+select system.replica(uuid '00000000-0000-0000-0000-000000000000')
+[null]
+# test: repl()
+select system.repl()
+[{
+  "active": false,
+  "role": "primary",
+  "primary": null,
+  "replicas": []
+}]
+# test: replication()
+select system.replication()
+[{
+  "active": false,
+  "role": "primary",
+  "primary": null,
+  "replicas": []
+}]
+# test: schemas()
+select system.schemas()
+[[{
+  "name": "system",
+  "system": true,
+  "create": false
+}, {
+  "name": "public",
+  "system": true,
+  "create": true
+}]]
+# test: schema()
+select system.schema('public')
+[{
+  "name": "public",
+  "system": true,
+  "create": true
+}]
+select system.schema('public').system
+[true]
+# test: tables()
+select system.tables()
+[[]]
+# test: table()
+select system.table('test')
+[null]
+select system.table('test.a')
+[null]
+# test: procedures()
+select system.procedures()
+[[]]
+# test: procedure()
+select system.procedure('test')
+[null]
+select system.procedure('test.a')
+[null]
+# test: wal()
+select system.wal()
+[{
+  "lsn": 1,
+  "lsn_min": 1,
+  "files": 1,
+  "slots": 0,
+  "slots_min": -1,
+  "writes": 0,
+  "writes_bytes": 0,
+  "ops": 0,
+  "checkpoint": 1
+}]
+# test: metrics()
+select system.metrics()::size
+[9]
+disconnect S0
+close E0

@@ -1,0 +1,281 @@
+#pragma once
+
+//
+// amelie.
+//
+// Real-Time SQL OLTP Database.
+//
+// Copyright (c) 2024 Dmitry Simonenko.
+// Copyright (c) 2024 Amelie Labs.
+//
+// AGPL-3.0 Licensed.
+//
+
+typedef struct OpDesc OpDesc;
+
+enum
+{
+	// control
+	CRET,
+	CNOP,
+	CJMP,
+	CJTR,
+	CJNTR,
+	CJGTED,
+	CJLTD,
+
+	// values
+	CFREE,
+	CDUP,
+	CMOV,
+
+	// stack
+	CPUSH,
+	CPOP,
+
+	// consts
+	CNULL,
+	CBOOL,
+	CINT,
+	CDOUBLE,
+	CSTRING,
+	CJSON,
+	CJSON_OBJ,
+	CJSON_ARRAY,
+	CINTERVAL,
+	CTIMESTAMP,
+	CDATE,
+	CVECTOR,
+	CUUID,
+
+	// argument
+	CARG,
+	CEXCLUDED,
+
+	// null operations
+	CNULLOP,
+	CIS,
+
+	// logical (any)
+	CAND,
+	COR,
+	CNOT,
+
+	// bitwise operations
+	CBORII,
+	CBANDII,
+	CBXORII,
+	CBSHLII,
+	CBSHRII,
+	CBINVI,
+
+	// equ
+	CEQUII,
+	CEQUIF,
+	CEQUFI,
+	CEQUFF,
+	CEQULL,
+	CEQUSS,
+	CEQUJJ,
+	CEQUVV,
+	CEQUUU,
+
+	// gte
+	CGTEII,
+	CGTEIF,
+	CGTEFI,
+	CGTEFF,
+	CGTELL,
+	CGTESS,
+	CGTEVV,
+	CGTEUU,
+
+	// gt
+	CGTII,
+	CGTIF,
+	CGTFI,
+	CGTFF,
+	CGTLL,
+	CGTSS,
+	CGTVV,
+	CGTUU,
+
+	// lte
+	CLTEII,
+	CLTEIF,
+	CLTEFI,
+	CLTEFF,
+	CLTELL,
+	CLTESS,
+	CLTEVV,
+	CLTEUU,
+
+	// lt
+	CLTII,
+	CLTIF,
+	CLTFI,
+	CLTFF,
+	CLTLL,
+	CLTSS,
+	CLTVV,
+	CLTUU,
+
+	// add
+	CADDII,
+	CADDIF,
+	CADDFI,
+	CADDFF,
+	CADDTL,
+	CADDLL,
+	CADDLT,
+	CADDDI,
+	CADDID,
+	CADDDL,
+	CADDLD,
+	CADDVV,
+
+	// sub
+	CSUBII,
+	CSUBIF,
+	CSUBFI,
+	CSUBFF,
+	CSUBTL,
+	CSUBTT,
+	CSUBLL,
+	CSUBDI,
+	CSUBDL,
+	CSUBVV,
+
+	// mul
+	CMULII,
+	CMULIF,
+	CMULFI,
+	CMULFF,
+	CMULVV,
+
+	// div
+	CDIVII,
+	CDIVIF,
+	CDIVFI,
+	CDIVFF,
+
+	// mod
+	CMODII,
+
+	// neg
+	CNEGI,
+	CNEGF,
+	CNEGL,
+
+	// cat
+	CCATSS,
+
+	// idx
+	CIDXJS,
+	CIDXJI,
+	CIDXVI,
+
+	// dot
+	CDOTJS,
+
+	// like
+	CLIKESS,
+
+	// set operations
+	CIN,
+	CALL,
+	CANY,
+	CEXISTS,
+
+	// set
+	CSET,
+	CSET_ORDERED,
+	CSET_ASSIGN,
+	CSET_PTR,
+	CSET_SORT,
+	CSET_ADD,
+	CSET_GET,
+	CSET_RESULT,
+	CSET_AGG,
+	CSELF,
+
+	// union
+	CUNION,
+	CUNION_SET_AGGS,
+	CUNION_RECV,
+
+	// table cursor
+	CTABLE_OPEN,
+	CTABLE_OPENL,
+	CTABLE_OPEN_PART,
+	CTABLE_OPEN_PARTL,
+	CTABLE_OPEN_HEAP,
+	CTABLE_PREPARE,
+	CTABLE_CLOSE,
+	CTABLE_NEXT,
+	CTABLE_READB,
+	CTABLE_READI8,
+	CTABLE_READI16,
+	CTABLE_READI32,
+	CTABLE_READI64,
+	CTABLE_READF32,
+	CTABLE_READF64,
+	CTABLE_READT,
+	CTABLE_READL,
+	CTABLE_READD,
+	CTABLE_READS,
+	CTABLE_READJ,
+	CTABLE_READV,
+	CTABLE_READU,
+
+	// store cursor
+	CSTORE_OPEN,
+	CSTORE_CLOSE,
+	CSTORE_NEXT,
+	CSTORE_READ,
+
+	// json cursor
+	CJSON_OPEN,
+	CJSON_CLOSE,
+	CJSON_NEXT,
+	CJSON_READ,
+
+	// aggs
+	CAGG,
+	CCOUNT,
+	CAVGI,
+	CAVGF,
+
+	// functions
+	CCALL,
+
+	// dml
+	CINSERT,
+	CUPSERT,
+	CDELETE,
+	CUPDATE,
+	CUPDATE_STORE,
+
+	// result
+	CSEND_SHARD,
+	CSEND_LOOKUP,
+	CSEND_LOOKUP_BY,
+	CSEND_ALL,
+	CRECV,
+
+	// result
+	CASSIGN,
+	CRESULT,
+	CCONTENT,
+	CREF
+};
+
+struct OpDesc
+{
+	int   id;
+	char* name;
+};
+
+extern OpDesc ops[];
+
+void op_dump(Code*, CodeData*, Buf*);

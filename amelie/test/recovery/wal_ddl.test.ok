@@ -1,0 +1,1139 @@
+open E0 "uuid": "00000000-0000-0000-0000-000000000000", "listen": [{ "host": "127.0.0.1", "port": 3485 }], "backends": 3
+connect E0 S0 127.0.0.1:3485
+# test: create table
+create table test (id serial primary key, data int default 0)
+select system.state().lsn
+[2]
+select identity_of("public", "test")
+[0]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[2]
+select identity_of("public", "test")
+[0]
+# test: alter table rename
+alter table test rename to test2
+select system.state().lsn
+[3]
+select identity_of("public", "test")
+{"msg": "table 'test': not exists"}
+select identity_of("public", "test2")
+[0]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[3]
+select identity_of("public", "test")
+{"msg": "table 'test': not exists"}
+select identity_of("public", "test2")
+[0]
+# test: alter table set unlogged
+alter table test2 set unlogged
+select system.table('test2').unlogged
+[true]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.table('test2').unlogged
+[true]
+select system.state().lsn
+[4]
+insert into test2 () values ()
+insert into test2 () values ()
+insert into test2 () values ()
+# test: alter table set logged
+alter table test2 set logged
+select system.table('test2').unlogged
+[false]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[5]
+select * from test2
+[]
+# test: alter table column add
+insert into test2() values (), (), ()
+select * from test2
+[[0, 0], [1, 0], [2, 0]]
+select system.state().lsn
+[6]
+select identity_of("public", "test2")
+[3]
+alter table test2 add column obj json
+select * from test2
+[[0, 0, null], [1, 0, null], [2, 0, null]]
+select obj from test2
+[null, null, null]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[7]
+select identity_of("public", "test2")
+[0]
+select * from test2
+[[0, 0, null], [1, 0, null], [2, 0, null]]
+# test: alter table column rename
+alter table test2 rename column data to abc
+select * from test2
+[[0, 0, null], [1, 0, null], [2, 0, null]]
+select data from test2
+{"msg": "select ❰data❱ ⟵ column test2.data not found"}
+select abc from test2
+[0, 0, 0]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[8]
+select identity_of("public", "test2")
+[0]
+select data from test2
+{"msg": "select ❰data❱ ⟵ column test2.data not found"}
+select abc from test2
+[0, 0, 0]
+# test: alter table set default
+alter table test2 set column abc default 123
+select system.table('test2').columns
+[[{
+  "name": "id",
+  "type": 2,
+  "type_size": 8,
+  "constraints": {
+    "not_null": true,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "abc",
+  "type": 2,
+  "type_size": 4,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": 123,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "obj",
+  "type": 5,
+  "type_size": 0,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}]]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[9]
+select system.table('test2').columns
+[[{
+  "name": "id",
+  "type": 2,
+  "type_size": 8,
+  "constraints": {
+    "not_null": true,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "abc",
+  "type": 2,
+  "type_size": 4,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": 123,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "obj",
+  "type": 5,
+  "type_size": 0,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}]]
+# test: alter table unset default
+alter table test2 unset column abc default
+select system.table('test2').columns
+[[{
+  "name": "id",
+  "type": 2,
+  "type_size": 8,
+  "constraints": {
+    "not_null": true,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "abc",
+  "type": 2,
+  "type_size": 4,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "obj",
+  "type": 5,
+  "type_size": 0,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}]]
+# test: alter table set identity
+alter table test2 set column abc as identity
+select system.table('test2').columns
+[[{
+  "name": "id",
+  "type": 2,
+  "type_size": 8,
+  "constraints": {
+    "not_null": true,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "abc",
+  "type": 2,
+  "type_size": 4,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "obj",
+  "type": 5,
+  "type_size": 0,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}]]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[11]
+select system.table('test2').columns
+[[{
+  "name": "id",
+  "type": 2,
+  "type_size": 8,
+  "constraints": {
+    "not_null": true,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "abc",
+  "type": 2,
+  "type_size": 4,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "obj",
+  "type": 5,
+  "type_size": 0,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}]]
+# test: alter table unset identity
+alter table test2 unset column abc as identity
+select system.table('test2').columns
+[[{
+  "name": "id",
+  "type": 2,
+  "type_size": 8,
+  "constraints": {
+    "not_null": true,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "abc",
+  "type": 2,
+  "type_size": 4,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "obj",
+  "type": 5,
+  "type_size": 0,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}]]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[12]
+select system.table('test2').columns
+[[{
+  "name": "id",
+  "type": 2,
+  "type_size": 8,
+  "constraints": {
+    "not_null": true,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "abc",
+  "type": 2,
+  "type_size": 4,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "obj",
+  "type": 5,
+  "type_size": 0,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}]]
+# test: alter table set stored
+alter table test2 set column abc as (1 + 1) stored
+select system.table('test2').columns
+[[{
+  "name": "id",
+  "type": 2,
+  "type_size": 8,
+  "constraints": {
+    "not_null": true,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "abc",
+  "type": 2,
+  "type_size": 4,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "1 + 1",
+    "as_resolved": ""
+  }
+}, {
+  "name": "obj",
+  "type": 5,
+  "type_size": 0,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}]]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[13]
+select system.table('test2').columns
+[[{
+  "name": "id",
+  "type": 2,
+  "type_size": 8,
+  "constraints": {
+    "not_null": true,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "abc",
+  "type": 2,
+  "type_size": 4,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "1 + 1",
+    "as_resolved": ""
+  }
+}, {
+  "name": "obj",
+  "type": 5,
+  "type_size": 0,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}]]
+# test: alter table unset stored
+alter table test2 unset column abc as stored
+select system.table('test2').columns
+[[{
+  "name": "id",
+  "type": 2,
+  "type_size": 8,
+  "constraints": {
+    "not_null": true,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "abc",
+  "type": 2,
+  "type_size": 4,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "obj",
+  "type": 5,
+  "type_size": 0,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}]]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[14]
+select system.table('test2').columns
+[[{
+  "name": "id",
+  "type": 2,
+  "type_size": 8,
+  "constraints": {
+    "not_null": true,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "abc",
+  "type": 2,
+  "type_size": 4,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "obj",
+  "type": 5,
+  "type_size": 0,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}]]
+# test: alter table set resolved
+alter table test2 set column abc as (1 + 1) resolved
+select system.table('test2').columns
+[[{
+  "name": "id",
+  "type": 2,
+  "type_size": 8,
+  "constraints": {
+    "not_null": true,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "abc",
+  "type": 2,
+  "type_size": 4,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": "1 + 1"
+  }
+}, {
+  "name": "obj",
+  "type": 5,
+  "type_size": 0,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}]]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[15]
+select system.table('test2').columns
+[[{
+  "name": "id",
+  "type": 2,
+  "type_size": 8,
+  "constraints": {
+    "not_null": true,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "abc",
+  "type": 2,
+  "type_size": 4,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": "1 + 1"
+  }
+}, {
+  "name": "obj",
+  "type": 5,
+  "type_size": 0,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}]]
+# test: alter table unset resolved
+alter table test2 unset column abc as resolved
+select system.table('test2').columns
+[[{
+  "name": "id",
+  "type": 2,
+  "type_size": 8,
+  "constraints": {
+    "not_null": true,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "abc",
+  "type": 2,
+  "type_size": 4,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "obj",
+  "type": 5,
+  "type_size": 0,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}]]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[16]
+select system.table('test2').columns
+[[{
+  "name": "id",
+  "type": 2,
+  "type_size": 8,
+  "constraints": {
+    "not_null": true,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": true,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "abc",
+  "type": 2,
+  "type_size": 4,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}, {
+  "name": "obj",
+  "type": 5,
+  "type_size": 0,
+  "constraints": {
+    "not_null": false,
+    "random": false,
+    "random_modulo": 9223372036854775807,
+    "default": null,
+    "as_identity": false,
+    "as_stored": "",
+    "as_resolved": ""
+  }
+}]]
+# test: alter table column drop
+alter table test2 drop column abc
+select abc from test2
+{"msg": "select ❰abc❱ ⟵ column test2.abc not found"}
+select * from test2
+[[0, null], [1, null], [2, null]]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[17]
+select identity_of("public", "test2")
+[0]
+select * from test2
+[[0, null], [1, null], [2, null]]
+# test: create index
+create index i on test2 (id)
+select * from test2 use index (i)
+[[0, null], [1, null], [2, null]]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[18]
+select identity_of("public", "test2")
+[0]
+select * from test2 use index (i)
+[[0, null], [1, null], [2, null]]
+# test: alter index rename
+alter index i on test2 rename to i2
+select system.state().lsn
+[19]
+select * from test2 use index (i2)
+[[0, null], [1, null], [2, null]]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[19]
+select identity_of("public", "test2")
+[0]
+select * from test2 use index (i2)
+[[0, null], [1, null], [2, null]]
+# test: drop index
+drop index i2 on test2
+select * from test2 use index (i)
+{"msg": "index 'i': not exists"}
+select * from test2 use index (i2)
+{"msg": "index 'i2': not exists"}
+select * from test2
+[[0, null], [1, null], [2, null]]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[20]
+select identity_of("public", "test2")
+[0]
+select * from test2 use index (i)
+{"msg": "index 'i': not exists"}
+select * from test2 use index (i2)
+{"msg": "index 'i2': not exists"}
+select * from test2
+[[0, null], [1, null], [2, null]]
+# test: truncate
+truncate test2
+select * from test2
+[]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[21]
+select identity_of("public", "test2")
+[0]
+select * from test2
+[]
+# test: drop table
+drop table test2
+select system.state().lsn
+[22]
+select identity_of("public", "test2")
+{"msg": "table 'test2': not exists"}
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[22]
+select * from test2
+{"msg": "select * from ❰test2❱ ⟵ relation not found"}
+show tables
+[]
+# test: create schema
+create schema test
+show schemas
+[{
+  "name": "system",
+  "system": true
+}, {
+  "name": "public",
+  "system": true
+}, {
+  "name": "test",
+  "system": false
+}]
+select system.state().lsn
+[23]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[23]
+show schemas
+[{
+  "name": "system",
+  "system": true
+}, {
+  "name": "public",
+  "system": true
+}, {
+  "name": "test",
+  "system": false
+}]
+# test: alter schema rename
+alter schema test rename to test2
+show schemas
+[{
+  "name": "system",
+  "system": true
+}, {
+  "name": "public",
+  "system": true
+}, {
+  "name": "test2",
+  "system": false
+}]
+select system.state().lsn
+[24]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[24]
+show schemas
+[{
+  "name": "system",
+  "system": true
+}, {
+  "name": "public",
+  "system": true
+}, {
+  "name": "test2",
+  "system": false
+}]
+# test: drop schema
+drop schema test2
+select system.state().lsn
+[25]
+show schemas
+[{
+  "name": "system",
+  "system": true
+}, {
+  "name": "public",
+  "system": true
+}]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[25]
+show schemas
+[{
+  "name": "system",
+  "system": true
+}, {
+  "name": "public",
+  "system": true
+}]
+# test: create procedure
+create procedure test (id int) begin select 1 end
+show procedures
+[{
+  "schema": "public",
+  "name": "test",
+  "text": "select 1",
+  "columns": [{
+    "name": "id",
+    "type": 2,
+    "type_size": 4,
+    "constraints": {
+      "not_null": false,
+      "random": false,
+      "random_modulo": 9223372036854775807,
+      "default": null,
+      "as_identity": false,
+      "as_stored": "",
+      "as_resolved": ""
+    }
+  }],
+  "vars": []
+}]
+select system.state().lsn
+[26]
+call test(0)
+execute test(0)
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[26]
+show procedures
+[{
+  "schema": "public",
+  "name": "test",
+  "text": "select 1",
+  "columns": [{
+    "name": "id",
+    "type": 2,
+    "type_size": 4,
+    "constraints": {
+      "not_null": false,
+      "random": false,
+      "random_modulo": 9223372036854775807,
+      "default": null,
+      "as_identity": false,
+      "as_stored": "",
+      "as_resolved": ""
+    }
+  }],
+  "vars": []
+}]
+call test(0)
+execute test(0)
+# test: alter procedure rename
+alter procedure test rename to test2
+select system.state().lsn
+[27]
+show procedures
+[{
+  "schema": "public",
+  "name": "test2",
+  "text": "select 1",
+  "columns": [{
+    "name": "id",
+    "type": 2,
+    "type_size": 4,
+    "constraints": {
+      "not_null": false,
+      "random": false,
+      "random_modulo": 9223372036854775807,
+      "default": null,
+      "as_identity": false,
+      "as_stored": "",
+      "as_resolved": ""
+    }
+  }],
+  "vars": []
+}]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[27]
+show procedures
+[{
+  "schema": "public",
+  "name": "test2",
+  "text": "select 1",
+  "columns": [{
+    "name": "id",
+    "type": 2,
+    "type_size": 4,
+    "constraints": {
+      "not_null": false,
+      "random": false,
+      "random_modulo": 9223372036854775807,
+      "default": null,
+      "as_identity": false,
+      "as_stored": "",
+      "as_resolved": ""
+    }
+  }],
+  "vars": []
+}]
+# test: drop procedure
+drop procedure test2
+show procedures
+[]
+select system.state().lsn
+[28]
+# test: restart
+disconnect S0
+close E0
+open E0
+connect E0 S0 127.0.0.1:3485
+# test: validate state
+select system.state().lsn
+[28]
+show procedures
+[]
+disconnect S0
+close E0
